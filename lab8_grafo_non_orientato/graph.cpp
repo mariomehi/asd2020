@@ -2,13 +2,16 @@
 
 using namespace graph;
 
+
+
+
 /*******************************************************************************************************/
 // Struct
 /*******************************************************************************************************/
 
 // Mezzo arco, non tiene il nodo sorgente
 struct halfEdgeNode {
-  vertexNode *vertPtr;
+  Label label;
   Weight weight; // peso dell'arco
   halfEdgeNode* next; // puntatore al mezzo arco successivo
 };
@@ -20,6 +23,7 @@ struct graph::vertexNode {
     vertexNode *next;
     bool visited;      // marcatura se nodo visitato
 };
+
 
 /*******************************************************************************************************/
 // Const
@@ -44,14 +48,21 @@ bool isVertexInGraph(Label l, const Graph& g) {
   return (getVertex(l, g)!=emptyGraph);
 }
 
-
+// Ritorna true se il vertice e' già stato visitato
+bool isVertexVisited(Label l, const Graph& g) {
+  vertexNode* vNode = getVertex(l, g);
+  if (getVertex(l, g)==emptyGraph) 
+    return false;
+  else
+    return (vNode->visited);
+}
 
 // Ritorna true se l'arco e' presente nel grafo
 bool isEdgeInGraph(Label from, Label to, const Graph& g) {
  vertexNode* vNode = getVertex(from, g);
  if (vNode == emptyGraph) return false;
  for (halfEdgeNode* n = vNode->adjList; n != emptyHalfEdgeNode; n = n->next) {
-    if (n->vertPtr->label == to ) return true;
+    if (n->label == to ) return true;
   }
  return false;
 }
@@ -60,7 +71,7 @@ bool isEdgeInGraph(Label from, Label to, const Graph& g) {
 // Da usare solo se i vertici "from" e "to" sono presenti nel grafo
 void addHalfEdge(Label from, Label to, Weight w, Graph& g) {
   halfEdgeNode *e = new halfEdgeNode;
-  e->vertPtr = getVertex(to, g);
+  e->label = to;
   e->weight = w;
   
   vertexNode* vNode = getVertex(from, g);
@@ -79,7 +90,7 @@ void printAdjList(Label l, const Graph& g) {
  vertexNode* vNode = getVertex(l, g);
  if (vNode==emptyGraph) return;
  for (halfEdgeNode* n = vNode->adjList; n != emptyHalfEdgeNode; n = n->next) {
-    cout << "(" << n->vertPtr->label << ", " << n->weight << ")" << " ";
+    cout << "(" << n->label << ", " << n->weight << ")" << " ";
   }
  cout << endl; 
 }
@@ -105,35 +116,37 @@ bool findPathRec(vertexNode *here, vertexNode *to, list::List &path, int &len, c
     for (halfEdgeNode* ee = here->adjList; ee != emptyHalfEdgeNode; ee = ee->next) {
         
         // se gia' visitato passo oltre
-        if (ee->vertPtr->visited)
+        if (isVertexVisited(ee->label, g))
             continue;
         
         // se e' la destinazione aggiorno il cammino con l'ultima tratta,
         // aggiorno la lunghezza totale, e torno al chiamante
-        if (ee->vertPtr->label == to->label) {
-            list::addFront(ee->vertPtr->label,path);
+        if (ee->label == to->label) {
+            list::addFront(ee->label,path);
             len += ee->weight;
             return true;
         }
         
         // provo a inoltrare il cammino verso quel nodo (chiamata ricorsiva)
-        bool res = findPathRec(ee->vertPtr, to, path, len, g);
+        bool res = findPathRec(getVertex(ee->label, g), to, path, len, g);
         
         // se ce l'ha fatta, aggiungo "here" al cammino, aggiorno la
         // lunghezza totale, e ritorno al chiamante
         if (res) {
-            list::addFront(ee->vertPtr->label,path);
+            list::addFront(ee->label,path);
             len += ee->weight;
             return true;
         }
         
         // se invece non ce l'ha fatta,
         // passo al prossimo nodo adiacente e provo da li'
+        
     }
     
     // evidentemente nessuno dei nodi adiacenti mi ha portato a destinazione.
     // Segnalo al chiamante che da "here" non si va alla destinazione
     return false;
+    
 }
 
 /*******************************************************************************************************/
@@ -226,7 +239,7 @@ list::List graph::adjacentList(Label v1, const Graph& g) {
   vertexNode* vNode = getVertex(v1, g);
   if (vNode==emptyGraph) return lst;
   for (halfEdgeNode* n = vNode->adjList; n != emptyHalfEdgeNode; n = n->next) {
-    list::addFront(n->vertPtr->label,lst);
+    list::addFront(n->label,lst);
   }
   return lst;
 }
@@ -248,7 +261,7 @@ void graph::findPath(Label v1, Label v2, list::List &path, int &len, const Graph
     if (from == to || from == emptyGraph || to == emptyGraph)
         return;
     
-    // preliminari: marco tutti i nodi/vertici come non visitati
+    // preliminari: marco tutti i nodi come non visitati
     for (graph::Graph v = g; v != emptyGraph; v = v->next) {
           v->visited = false;
     }

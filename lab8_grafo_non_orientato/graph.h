@@ -22,6 +22,7 @@ typedef vertexNode* Graph; // un grafo è identificato dal puntatore al primo ve
 
 const Graph emptyGraph = NULL; 
 
+
 // createEmptyGraph restituisce il grafo vuoto 
 Graph createEmptyGraph();
 
